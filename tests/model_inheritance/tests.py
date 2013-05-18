@@ -318,3 +318,24 @@ class ModelInheritanceTests(TestCase):
             sql = query['sql']
             if 'UPDATE' in sql:
                 self.assertEqual(expected_sql, sql)
+
+    def test_permission_inheritance(self):
+        from django.contrib.auth.models import Permission
+        # Query for all created Permission objects. The 'add_*' objects are included to
+        # check that default permissions are created.
+        created_codenames = [
+            'add_worker', 'change_worker', 'delete_worker', 'view_worker',
+            'add_student', 'change_student', 'delete_student', 'view_student', 'enroll_student',
+            'add_studentworker', 'change_studentworker', 'delete_studentworker', 'view_studentworker',
+            'can_teach',
+        ]
+        not_created_codenames = [
+            'view_teacher',
+        ]
+        permissions = Permission.objects.all().values_list('codename', flat=True)
+        for codename in created_codenames:
+            if not codename in permissions:
+                self.fail("Permission object %s should have been created, but it was not." % codename)
+        for codename in not_created_codenames:
+            if codename in permissions:
+                self.fail("Permission object %s should not have been created, but it was." % codename)

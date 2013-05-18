@@ -22,7 +22,7 @@ DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural', 'db_table', 'ordering',
                  'unique_together', 'permissions', 'get_latest_by',
                  'order_with_respect_to', 'app_label', 'db_tablespace',
                  'abstract', 'managed', 'proxy', 'swappable', 'auto_created',
-                 'index_together')
+                 'index_together', 'inherit_permissions')
 
 
 @python_2_unicode_compatible
@@ -105,6 +105,18 @@ class Options(object):
             if ut and not isinstance(ut[0], (tuple, list)):
                 ut = (ut,)
             self.unique_together = ut
+
+            # check for the %(class)s escape used for inherited permissions.
+            # If present, replace it with the appropriate text based off of
+            # the class name for both the name and codename of the permission.
+            perms = meta_attrs.pop('permissions', self.permissions)
+            translated_perms = []
+            if perms:
+                for codename, name in perms:
+                    codename = codename % {'class': cls.__name__.lower()}
+                    name = name % {'class': self.verbose_name}
+                    translated_perms.append((codename, name),)
+            self.permissions = translated_perms
 
             # verbose_name_plural is a special case because it uses a 's'
             # by default.
